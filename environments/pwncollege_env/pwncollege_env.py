@@ -442,6 +442,76 @@ class PwnCollegeEnv(HermesAgentBaseEnv):
         self.solve_rate_buffer.append(0.0)
         return 0.0
 
+    async def process_manager(self):
+        """Override: process items concurrently instead of sequentially.
+
+        Stock Atropos process_manager processes one item at a time (sequential).
+        Each pwncollege rollout needs a dojo slot, so sequential processing
+        wastes slots.  This override runs multiple items concurrently, gated
+        by eval_concurrency (= max dojo instances), so all slots stay busy.
+        """
+        from atroposlib.frontend.jsonl2html import generate_html
+
+        await self.setup()
+
+        if self.config.use_wandb:
+            import random
+            import string
+            from datetime import datetime
+
+            import wandb
+
+            random_id = "".join(random.choices(string.ascii_lowercase, k=6))
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            wandb.init(
+                project=self.wandb_project,
+                name=f"{self.name}-{current_date}-{random_id}",
+                group=self.wandb_group,
+                config=self.config.model_dump(),
+            )
+
+        self.config.group_size = self.group_size_to_process
+        items = self.train[:self.n_groups_to_process]
+
+        total = len(items)
+        concurrency = self.config.eval_concurrency
+        semaphore = asyncio.Semaphore(concurrency)
+        completed = 0
+
+        logger.info(
+            "Processing %d items (concurrency=%d, group_size=%d)",
+            total, concurrency, self.group_size_to_process,
+        )
+
+        async def process_one(item):
+            nonlocal completed
+            challenge_key = self._get_challenge_key(item)
+            async with semaphore:
+                try:
+                    to_postprocess, _ = await self.collect_trajectories(item)
+                    if to_postprocess:
+                        processed = await self.postprocess_histories(to_postprocess)
+                        await self.handle_send_to_api(
+                            processed, item,
+                            do_send_to_api=False,
+                            abort_on_any_max_length_exceeded=False,
+                        )
+                except Exception as e:
+                    logger.error("Failed to process %s: %s", challenge_key, e)
+                finally:
+                    completed += 1
+                    logger.info("Processed %d/%d (%s)", completed, total, challenge_key)
+
+        await asyncio.gather(*[process_one(item) for item in items])
+
+        logger.info("Completed processing %d items", completed)
+
+        if self.jsonl_writer is not None:
+            self.jsonl_writer.close()
+
+        if self.config.data_path_to_save_groups:
+            generate_html(self.config.data_path_to_save_groups)
+
     async def evaluate(self, *args, **kwargs):
         """Run evaluation on a dojo/module and report solve rate.
 

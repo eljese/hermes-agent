@@ -1,0 +1,53 @@
+env:
+  # Breadth: total items to process (>= 842 challenges in dojo)
+  total_steps: 850
+  # Depth: completions per item (1 = max coverage speed)
+  group_size: 1
+  # Concurrency: match dojo max_instances (16 slots)
+  eval_concurrency: 16
+
+  max_agent_turns: 30
+  max_token_length: 16384
+  agent_temperature: 0.7
+  enabled_toolsets:
+    - terminal
+    - file
+    - pwncollege
+  terminal_backend: ssh
+  terminal_timeout: 120
+  terminal_lifetime: 3600
+  disable_command_guards: true
+  tool_call_parser: hermes
+
+  # Dojo connection
+  base_url: http://100.120.55.25:8080
+  ssh_host: 100.120.55.25
+  ssh_port: 2222
+  ssh_key: environments/pwncollege_env/keys/rl_test_key
+
+  # No filters = all challenges
+  challenge: hello/hello
+  dojo_filter: null
+  module_filter: null
+
+  # Output
+  data_path_to_save_groups: environments/pwncollege_env/eval_runs/process_all.jsonl
+  data_dir_to_save_evals: environments/pwncollege_env/eval_runs/process_all
+  ensure_scores_are_not_same: false
+  include_messages: true
+  use_wandb: false
+  wandb_name: pwncollege-process
+
+  # Not needed for process mode but required by config schema
+  tokenizer_name: NousResearch/Hermes-3-Llama-3.1-8B
+  rollout_server_url: http://localhost:8000
+openai:
+  - timeout: 1200
+    num_max_requests_at_once: 128
+    model_name: anthropic/claude-sonnet-4.5
+    server_type: openai
+    api_key: ""
+    base_url: https://openrouter.ai/api/v1
+    health_check: false
+slurm: false
+testing: false
