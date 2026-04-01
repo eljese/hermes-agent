@@ -737,6 +737,14 @@ OPTIONAL_ENV_VARS = {
         "category": "tool",
         "advanced": True,
     },
+    "CRAWL4AI_API_URL": {
+        "description": "Crawl4AI server URL for self-hosted web scraping (search uses duckduckgo)",
+        "prompt": "Crawl4AI server URL (e.g. https://crawl4ai.salmiset.win)",
+        "url": None,
+        "password": False,
+        "category": "tool",
+        "advanced": True,
+    },
     "TAVILY_API_KEY": {
         "description": "Tavily API key for AI-native web search, extract, and crawl",
         "prompt": "Tavily API key",
