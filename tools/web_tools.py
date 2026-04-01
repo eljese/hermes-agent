@@ -74,13 +74,14 @@ def _get_backend() -> str:
     keys manually without running setup.
     """
     configured = (_load_web_config().get("backend") or "").lower().strip()
-    if configured in ("parallel", "firecrawl", "tavily", "exa", "crawl4ai"):
+    if configured in ("parallel", "firecrawl", "tavily", "exa", "crawl4ai", "serper"):
         return configured
 
     # Fallback for manual / legacy config — pick highest-priority backend
-    # that has a key configured.  Order: crawl4ai > firecrawl > parallel > tavily > exa.
+    # that has a key configured.  Order: crawl4ai > serper > firecrawl > parallel > tavily > exa.
     for backend, keys in [
         ("crawl4ai",  ("CRAWL4AI_API_URL",)),
+        ("serper",    ("SERPER_API_KEY",)),
         ("firecrawl", ("FIRECRAWL_API_KEY", "FIRECRAWL_API_URL")),
         ("parallel",  ("PARALLEL_API_KEY",)),
         ("tavily",    ("TAVILY_API_KEY",)),
@@ -165,7 +166,7 @@ async def _crawl4ai_scrape(url: str, formats: List[str] = None) -> Dict[str, Any
     if not api_url:
         raise ValueError("CRAWL4AI_API_URL not set")
 
-    payload: Dict[str, Any] = {"urls": [url]}
+    payload: Dict[str, Any] = {"urls": [url], "max_tokens": 100000, "enable_llm_processing": False}
     if formats is None:
         formats = ["markdown"]
 
@@ -194,7 +195,7 @@ def _crawl4ai_scrape_sync(url: str, formats: List[str] = None) -> Dict[str, Any]
     if not api_url:
         raise ValueError("CRAWL4AI_API_URL not set")
 
-    payload: Dict[str, Any] = {"urls": [url]}
+    payload: Dict[str, Any] = {"urls": [url], "max_tokens": 100000, "enable_llm_processing": False}
 
     resp = httpx.post(f"{api_url}/crawl", json=payload, timeout=30.0)
     resp.raise_for_status()
@@ -240,6 +241,50 @@ def _crawl4ai_search(query: str, limit: int = 10) -> Dict[str, Any]:
         return {"success": False, "error": str(e), "data": {"web": []}}
 
     return {"success": True, "data": {"web": results}}
+
+
+# ─── Serper Client ──────────────────────────────────────────────────────────
+#
+# Serper (https://serper.dev) — Google Search API with free tier.
+# 2,500 searches/month free. No SDK needed, direct REST API.
+#
+# API endpoint: POST https://google.serper.dev/search
+# Auth: X-API-Key header
+
+def _serper_search(query: str, limit: int = 10) -> Dict[str, Any]:
+    """
+    Search using the Serper Google Search API.
+
+    Returns {success, data: {web: [{url, title, description}, ...]}}
+    """
+    api_key = os.getenv("SERPER_API_KEY")
+    if not api_key:
+        return {"success": False, "error": "SERPER_API_KEY not set", "data": {"web": []}}
+
+    try:
+        response = httpx.post(
+            "https://google.serper.dev/search",
+            headers={"X-API-Key": api_key, "Content-Type": "application/json"},
+            json={"q": query, "num": min(limit, 10)},
+            timeout=15,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        results = []
+        for item in data.get("organic", [])[:limit]:
+            results.append({
+                "url": item.get("link", ""),
+                "title": item.get("title", ""),
+                "description": item.get("snippet", ""),
+            })
+
+        return {"success": True, "data": {"web": results}}
+
+    except httpx.HTTPStatusError as e:
+        return {"success": False, "error": f"HTTP {e.response.status_code}: {e.response.text[:100]}", "data": {"web": []}}
+    except Exception as e:
+        return {"success": False, "error": str(e), "data": {"web": []}}
 
 
 # ─── Parallel Client ─────────────────────────────────────────────────────────
@@ -974,8 +1019,22 @@ def web_search_tool(query: str, limit: int = 5) -> str:
             return result_json
 
         if backend == "crawl4ai":
-            logger.info("Crawl4AI+DDG search: '%s' (limit: %d)", query, limit)
+            logger.info("Crawl4AI search: '%s' (limit: %d)", query, limit)
             response_data = _crawl4ai_search(query, limit=limit)
+            if not response_data.get("success"):
+                logger.warning("Crawl4AI failed (%s), trying Serper fallback", response_data.get("error", "unknown"))
+                response_data = _serper_search(query, limit=limit)
+                debug_call_data["fallback"] = "crawl4ai→serper"
+            debug_call_data["results_count"] = len(response_data.get("data", {}).get("web", []))
+            result_json = json.dumps(response_data, indent=2, ensure_ascii=False)
+            debug_call_data["final_response_size"] = len(result_json)
+            _debug.log_call("web_search_tool", debug_call_data)
+            _debug.save()
+            return result_json
+
+        if backend == "serper":
+            logger.info("Serper search: '%s' (limit: %d)", query, limit)
+            response_data = _serper_search(query, limit=limit)
             debug_call_data["results_count"] = len(response_data.get("data", {}).get("web", []))
             result_json = json.dumps(response_data, indent=2, ensure_ascii=False)
             debug_call_data["final_response_size"] = len(result_json)
@@ -1057,8 +1116,10 @@ def web_search_tool(query: str, limit: int = 5) -> str:
 
 async def web_extract_tool(
     urls: List[str], 
-    format: str = None, 
-    use_llm_processing: bool = True,
+    format: str = None,
+    # NOTE: LLM summarization requires auxiliary API credits. Disable by default.
+    # Re-enable by passing use_llm_processing=True or via AUXILIARY_WEB_EXTRACT_MODEL env var.
+    use_llm_processing: bool = False,
     model: str = DEFAULT_SUMMARIZER_MODEL,
     min_length: int = DEFAULT_MIN_LENGTH_FOR_SUMMARIZATION
 ) -> str:
@@ -1588,7 +1649,7 @@ async def web_crawl_tool(
             # Use Crawl4AI /crawl (sync) — no depth param support, just limit
             import httpx
             api_url = _get_crawl4ai_api_url()
-            crawl_payload = {"urls": [url]}
+            crawl_payload = {"urls": [url], "max_tokens": 100000, "enable_llm_processing": False}
             logger.info("Crawl4AI crawl: %s", url)
             resp = httpx.post(f"{api_url}/crawl", json=crawl_payload, timeout=60.0)
             resp.raise_for_status()
@@ -1873,13 +1934,14 @@ def check_firecrawl_api_key() -> bool:
 
 
 def check_web_api_key() -> bool:
-    """Check if any web backend API key is available (Exa, Parallel, Firecrawl, Crawl4AI, or Tavily)."""
+    """Check if any web backend API key is available (Crawl4AI, Serper, Exa, Parallel, Firecrawl, or Tavily)."""
     return bool(
-        os.getenv("EXA_API_KEY")
+        os.getenv("CRAWL4AI_API_URL")
+        or os.getenv("SERPER_API_KEY")
+        or os.getenv("EXA_API_KEY")
         or os.getenv("PARALLEL_API_KEY")
         or os.getenv("FIRECRAWL_API_KEY")
         or os.getenv("FIRECRAWL_API_URL")
-        or os.getenv("CRAWL4AI_API_URL")
         or os.getenv("TAVILY_API_KEY")
     )
 
@@ -2040,7 +2102,7 @@ registry.register(
     schema=WEB_SEARCH_SCHEMA,
     handler=lambda args, **kw: web_search_tool(args.get("query", ""), limit=5),
     check_fn=check_web_api_key,
-    requires_env=["EXA_API_KEY", "PARALLEL_API_KEY", "FIRECRAWL_API_KEY", "TAVILY_API_KEY"],
+    requires_env=["CRAWL4AI_API_URL", "SERPER_API_KEY", "EXA_API_KEY", "PARALLEL_API_KEY", "FIRECRAWL_API_KEY", "TAVILY_API_KEY"],
     emoji="🔍",
 )
 registry.register(
