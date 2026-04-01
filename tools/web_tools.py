@@ -213,6 +213,47 @@ def _crawl4ai_scrape_sync(url: str, formats: List[str] = None) -> Dict[str, Any]
     }
 
 
+async def _crawl4ai_llm_scrape(url: str, query: str) -> Dict[str, Any]:
+    """
+    Scrape a URL using Crawl4AI's LLM processing endpoint (/llm/<url>?q=<query>).
+
+    Returns a dict compatible with the Firecrawl scrape result shape:
+      {url, markdown, html, metadata}
+    """
+    import httpx
+    api_url = _get_crawl4ai_api_url()
+    if not api_url:
+        raise ValueError("CRAWL4AI_API_URL not set")
+
+    # Encode the target URL into the path
+    from urllib.parse import quote
+    encoded_url = quote(url, safe="")
+    llm_url = f"{api_url}/llm/{encoded_url}?q={quote(query, safe='')}"
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+        resp = await client.get(llm_url, timeout=60.0)
+        resp.raise_for_status()
+        result = resp.json()
+
+    # LLM endpoint returns {"answer": "...LLM text..."} or similar
+    if isinstance(result, dict):
+        # Try common shapes — /llm returns {"answer": "..."}
+        llm_content = (
+            result.get("answer")
+            or result.get("result", {}).get("markdown")
+            or result.get("markdown")
+            or result.get("content")
+            or str(result)
+        )
+        return {
+            "url": url,
+            "markdown": llm_content,
+            "html": None,
+            "metadata": {"source": "crawl4ai-llm"},
+        }
+    return {"url": url, "markdown": str(result), "html": None, "metadata": {}}
+
+
 def _crawl4ai_search(query: str, limit: int = 10) -> Dict[str, Any]:
     """
     Search using duckduckgo (ddgs) and return results in Firecrawl search format.
@@ -1209,8 +1250,14 @@ async def web_extract_tool(
                         })
                         continue
                     try:
-                        logger.info("Crawl4AI scrape: %s", url)
-                        scrape_result = await _crawl4ai_scrape(url)
+                        logger.info("Crawl4AI scrape: %s (llm=%s)", url, use_llm_processing)
+                        if use_llm_processing:
+                            # Use the LLM processing endpoint — query defaults to summarization
+                            scrape_result = await _crawl4ai_llm_scrape(
+                                url, query="Extract and summarize all key information from this page"
+                            )
+                        else:
+                            scrape_result = await _crawl4ai_scrape(url)
                         title = ""
                         content_markdown = None
                         content_html = None
