@@ -3988,6 +3988,25 @@ class GatewayRunner:
             if not response and result and result.get("error"):
                 response = f"Error: {result['error']}"
 
+            # Persist token counts from background task result
+            if hasattr(self, "session_store") and result and isinstance(result, dict):
+                session_key = self._session_key_for_source(source)
+                if session_key:
+                    self.session_store.update_session(
+                        session_key,
+                        input_tokens=result.get("input_tokens", 0),
+                        output_tokens=result.get("output_tokens", 0),
+                        cache_read_tokens=result.get("cache_read_tokens", 0),
+                        cache_write_tokens=result.get("cache_write_tokens", 0),
+                        last_prompt_tokens=result.get("last_prompt_tokens", 0),
+                        model=result.get("model"),
+                        estimated_cost_usd=result.get("estimated_cost_usd"),
+                        cost_status=result.get("cost_status"),
+                        cost_source=result.get("cost_source"),
+                        provider=result.get("provider"),
+                        base_url=result.get("base_url"),
+                    )
+
             # Extract media files from the response
             if response:
                 media_files, response = adapter.extract_media(response)
@@ -6076,7 +6095,24 @@ class GatewayRunner:
         _sc = stream_consumer_holder[0]
         if _sc and _sc.already_sent and isinstance(response, dict):
             response["already_sent"] = True
-        
+
+        # Persist cumulative token counts to session DB for /insights.
+        if hasattr(self, "session_store") and session_key and isinstance(response, dict):
+            self.session_store.update_session(
+                session_key,
+                input_tokens=response.get("input_tokens", 0),
+                output_tokens=response.get("output_tokens", 0),
+                cache_read_tokens=response.get("cache_read_tokens", 0),
+                cache_write_tokens=response.get("cache_write_tokens", 0),
+                last_prompt_tokens=response.get("last_prompt_tokens", 0),
+                model=response.get("model"),
+                estimated_cost_usd=response.get("estimated_cost_usd"),
+                cost_status=response.get("cost_status"),
+                cost_source=response.get("cost_source"),
+                provider=response.get("provider"),
+                base_url=response.get("base_url"),
+            )
+
         return response
 
 
