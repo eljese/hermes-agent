@@ -81,6 +81,19 @@ _UTC_NOW = lambda: datetime.now(timezone.utc)
 # Official docs snapshot entries. Models whose published pricing and cache
 # semantics are stable enough to encode exactly.
 _OFFICIAL_DOCS_PRICING: Dict[tuple[str, str], PricingEntry] = {
+    # MiniMax M2.7 — https://www.minimax.io/pricing
+    (
+        "minimax",
+        "minimax-m2.7",
+    ): PricingEntry(
+        input_cost_per_million=Decimal("0.30"),
+        output_cost_per_million=Decimal("1.20"),
+        cache_read_cost_per_million=Decimal("0.06"),
+        cache_write_cost_per_million=Decimal("0.375"),
+        source="official_docs_snapshot",
+        source_url="https://www.minimax.io/pricing",
+        pricing_version="minimax-m2-2026",
+    ),
     (
         "anthropic",
         "claude-opus-4-20250514",
@@ -327,6 +340,8 @@ def resolve_billing_route(
         return BillingRoute(provider="openai", model=model.split("/")[-1], base_url=base_url or "", billing_mode="official_docs_snapshot")
     if provider_name in {"custom", "local"} or (base and "localhost" in base):
         return BillingRoute(provider=provider_name or "custom", model=model, base_url=base_url or "", billing_mode="unknown")
+    if provider_name == "minimax" or "minimax.io" in base:
+        return BillingRoute(provider="minimax", model=model.split("/")[-1] if model else "", base_url=base_url or "", billing_mode="official_docs_snapshot")
     return BillingRoute(provider=provider_name or "unknown", model=model.split("/")[-1] if model else "", base_url=base_url or "", billing_mode="unknown")
 
 
