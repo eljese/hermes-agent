@@ -1,0 +1,89 @@
+[
+  {
+    "date": "2026-04-22",
+    "patrol_session": "nightly-proventia-retrofit-patrol-2026-04-22",
+    "leads_found": 20,
+    "leads_written": [
+      "M/F Geisnes Tier II NOx Retrofit (MAN 6L23/30, 566 kW, Norway)",
+      "M/S Suomenlinna II ABB ACS880LC Propulsion Drive Retrofit (Helsinki, Finland)",
+      "Gotland Horizon X Battery Hybrid Install (780 kWh, Destination Gotland, Sweden)",
+      "GreenPilot Methanol Pilot Boat Retrofit (313 kW, Swedish Maritime Administration)",
+      "Color Line Wartsila Hybrid Scrubber Upgrade (Norway/Sweden/Denmark/Germany routes)",
+      "ELEKTRA Zero-Emission Canal Push Boat (H2 fuel cell 300 kW + 420 kW motors, Berlin)",
+      "Scandlines Plug-in Hybrid Ferry Conversion (Puttgarden-Rodby, Wartsila contractor)",
+      "FASTWATER Methanol Retrofit Program (200 kW-4 MW kits, EU-wide, SMSA/Lurssen demos)",
+      "REISFER Central Baltic Ferry Decarbonisation (Finferries, TS Laevad, AxFerries, Blidosundsbolaget)",
+      "Austrian Hospital Standby Generator Retrofits (Oberwart 600 kW, Wels 300 kW + 800 kVA)",
+      "Kainuu Central Hospital Backup Power with Flywheel (Finland, kW-set/Caverion)",
+      "HUS Meilahti Hospital Medium Voltage Upgrade (ABB, Helsinki, Finland)",
+      "NorthC Hydrogen Data Centre Emergency Power (500 kW H2 module, Netherlands)",
+      "UNICEF Dual-Fuel Genset Retrofit RFP (250 kVA, global/Europe, deadline Nov 30 2025)",
+      "Avesco Finland Cat Certified Rebuilds (349D/330D/988K, Ketrálán Murske, Swerock)",
+      "Geismar AGX Railway Maintenance Machine Electric Conversion Kits (Scandinavia)",
+      "Eminox EMx S5 RAS-Approved NRMM Retrofit (Stage IIIA to Stage V, HS2 UK)",
+      "ULEMCo H2ICED Piling Machine Conversion ZECHER (UK, GBP418K funding)",
+      "HyConstruct Dual-Fuel Hydrogen Kobelco Excavators (UK, Balfour Beatty/BAM Nuttall)",
+      "Balfour Beatty VINCI HS2 Machine Retrofits with Eminox (19 machines, UK)"
+    ],
+    "verticals_searched": [
+      "Marine Ferries - Nordic/Baltic",
+      "Marine Ferries - EU Inland Waterways",
+      "Stationary Power",
+      "NRMM"
+    ],
+    "markets_searched": [
+      "Nordic",
+      "Baltic",
+      "EU Inland Waterways",
+      "Finland",
+      "Sweden",
+      "UK",
+      "Germany",
+      "Austria",
+      "Netherlands",
+      "Denmark",
+      "Norway",
+      "Estonia"
+    ],
+    "search_queries_used": [
+      "ferry engine retrofit 800kW OR 500kW OR 300kW Nordic Baltic",
+      "ferry propulsion engine replacement Scandinavia 2024 2025",
+      "marine ferry retrofit program Finland Sweden Norway Denmark",
+      "vessel engine retrofits EU waterways分段推进<1MW",
+      "inland waterways ferry engine retrofit EU",
+      "vessel engine replacement Rhine corridor",
+      "EU inland transport ferry retrofit program 2024 2025",
+      "hospital backup generator retrofit 500kW 800kW Europe",
+      "data centre standby genset replacement 2024 2025 Europe",
+      "industrial backup power retrofit <1MW Germany Scandinavia",
+      "hospital standby power genset retrofit Scandinavia",
+      "emergency power system upgrade hospital Finland Sweden Denmark Norway",
+      "industrial backup genset retrofit Europe 2024",
+      "construction equipment engine retrofit Finland Sweden 2024 2025",
+      "excavator wheel loader engine replacement Stage V retrofit",
+      "NRMM retrofit construction equipment Germany Scandinavia UK 2024",
+      "construction machinery engine retrofits EU Stage V compliance",
+      "construction equipment engine retrofit UK 2024",
+      "off-highway machinery engine upgrade UK construction"
+    ],
+    "gems": [
+      "Eminox EMx S5 is first RAS-approved NRMM retrofit product in UK (Stage IIIA to Stage V) — Balfour Beatty VINCI saved GBP50M retrofitting 19 machines vs replacement; proven compliance pathway for Finland/Sweden to replicate",
+      "FASTWATER methanol retrofit kits (200 kW-4 MW) proven on harbour tug, pilot boat, coast guard vessel — lowest-risk entry point for ferry methanol conversion; kit already commercialised",
+      "Balfour Beatty VINCI HS2 retrofit programme is largest documented NRMM retrofit in UK — model for Skanska/NCC in Nordic markets where similar Stage V enforcement is emerging",
+      "Austrian hospital standby genset market (MITTES Engineering) — active tender pipeline with 300-800 kW units that match Proventia genset range; replicable in Finland/Sweden hospital sector",
+      "REISFER Interreg project (EUR 2024-2027) covers 4 ferry operators across Finland, Estonia, Sweden, Aland — direct warm introduction path for methanol retrofit",
+      "GreenPilot (313 kW methanol pilot boat, Swedish Maritime Administration) — directly references methanol retrofit kit vendors; established Swedish public sector reference"
+    ],
+    "junk": [
+      "MF Hamlet battery conversion (4x1530 kW) — exceeds 800 kW threshold per engine",
+      "Stena Superfast VII/VIII methanol conversion (46 MW total) — far exceeds 800 kW; excluded Wartsila ZA V40S reference",
+      "H2 Barge 2 FLAGSHIPS (1.2 MW fuel cells) — exceeds 800 kW threshold",
+      "Oulu University Hospital (8 MW total) — exceeds 1 MW threshold",
+      "Norway Data Centre (11 MW total) — exceeds 1 MW; hyperscale",
+      "EcoDataCenter Falun (multiple 32 mtu Series 4000 units) — hyperscale data centre",
+      "RH2IWER 1.8 MW retrofit — exceeds 800 kW",
+      "Predictive Maintenance search queries — confirmed zero leads via public search"
+    ],
+    "pattern_learned": "Marine ferry retrofit market is rapidly bifurcating: large vessels (>1 MW) are moving toward methanol/hydrogen new builds while smaller vessels (<800 kW) are prime for methanol retrofit kits or battery hybrid installs. Stationary power hospitals (300-800 kW range) represent the most actionable vertical — active tenders, short sales cycles, clear OEM dealer networks (kW-set, MITTES). UK NRMM is the most structurally developed retrofit market globally due to Stage V enforcement and the HS2 programme creating a documented GBP50M saving from retrofit vs replace. Finland/Sweden NRMM is currently dominated by electric new-build trends rather than retrofits. EU inland waterways are heavily hydrogen-funded (Horizon Europe, FLAGSHIPS, RH2IWER) — hydrogen ICE retrofit kits (like ULEMCo H2ICED) are the analogue to Proventia's methanol offering in this segment. Predictive Maintenance remains a dead end for lead generation via public search."
+  }
+]

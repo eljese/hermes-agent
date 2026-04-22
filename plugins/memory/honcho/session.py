@@ -835,12 +835,6 @@ class HonchoSessionManager:
         has a populated card.
         """
         peer = self._get_or_create_peer(peer_id)
-        import sys
-        import os
-        pid = os.getpid()
-        with open(f"/tmp/honcho_fire_alarm_{pid}.txt", "a") as f:
-            f.write(f"[{datetime.now().isoformat()}] _fetch_peer_card PID={pid} peer_id={peer_id!r} target={target!r}\n")
-        print(f"[HONCHO_DEBUG] _fetch_peer_card peer_id={peer_id!r} target={target!r} peer.id={getattr(peer,'id',None)!r}", file=sys.stderr)
         getter = getattr(peer, "get_card", None)
         if callable(getter):
             # Self-card reads (observer == target): call get_card() with no args to get
@@ -849,7 +843,6 @@ class HonchoSessionManager:
                 raw = getter()
             else:
                 raw = getter(target=target)
-            print(f"[HONCHO_DEBUG] _fetch_peer_card raw={raw!r}", file=sys.stderr)
             return self._normalize_card(raw)
 
         legacy_getter = getattr(peer, "card", None)
@@ -1004,18 +997,8 @@ class HonchoSessionManager:
         inferred about the target peer (name, role, preferences, patterns).
         Empty list if unavailable.
         """
-        import sys
-        import traceback
-        import os
-        pid = os.getpid()
-        # File trace to confirm code path - always writes, even if session not found
-        with open(f"/tmp/honcho_fire_alarm_{pid}.txt", "w") as f:
-            f.write(f"[{datetime.now().isoformat()}] get_peer_card PID={pid} session_key={session_key!r} peer={peer!r}\n")
-            f.write("".join(traceback.format_stack()[-5:-1]))
-        print(f"[HONCHO_PROFILE_DEBUG] get_peer_card called session_key={session_key!r} peer={peer!r}", file=sys.stderr)
         session = self._cache.get(session_key)
         if not session:
-            print(f"[HONCHO_PROFILE_DEBUG] No session found for {session_key!r}", file=sys.stderr)
             return []
 
         try:
