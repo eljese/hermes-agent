@@ -8122,6 +8122,11 @@ class AIAgent:
                     spinner.start()
                 _mem_result = None
                 try:
+                    import sys
+                    import os
+                    pid = os.getpid()
+                    with open(f"/tmp/honcho_fire_alarm_{pid}.txt", "a") as f:
+                        f.write(f"[{datetime.now().isoformat()}] handle_tool_call PID={pid} tool={tool_name!r} args={args!r} kwargs={kwargs!r}\n")
                     function_result = self._memory_manager.handle_tool_call(function_name, function_args)
                     _mem_result = function_result
                 except Exception as tool_error:
