@@ -851,7 +851,6 @@ class HonchoSessionManager:
                 raw = legacy_getter()
             else:
                 raw = legacy_getter(target=target)
-            print(f"[HONCHO_DEBUG] _fetch_peer_card legacy raw={raw!r}", file=sys.stderr)
             return self._normalize_card(raw)
 
         return []
@@ -984,10 +983,10 @@ class HonchoSessionManager:
         if target_peer_id == session.assistant_peer_id:
             return session.assistant_peer_id, session.assistant_peer_id
 
-        if self._ai_observe_others:
-            return session.assistant_peer_id, target_peer_id
-
-        return target_peer_id, None
+        # Unknown peer (e.g. a host key like "hermes" that resolves to an actual peer's
+        # user ID, or any other peer ID not matching user/ai): read from the target's
+        # own perspective — treat it as a self-card read of that peer.
+        return target_peer_id, target_peer_id
 
     def get_peer_card(self, session_key: str, peer: str = "user") -> list[str]:
         """
