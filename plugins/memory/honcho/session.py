@@ -1000,8 +1000,11 @@ class HonchoSessionManager:
         inferred about the target peer (name, role, preferences, patterns).
         Empty list if unavailable.
         """
+        import sys
+        print(f"[HONCHO_PROFILE_DEBUG] get_peer_card called session_key={session_key!r} peer={peer!r}", file=sys.stderr)
         session = self._cache.get(session_key)
         if not session:
+            print(f"[HONCHO_PROFILE_DEBUG] No session found for {session_key!r}", file=sys.stderr)
             return []
 
         try:
