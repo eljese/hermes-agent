@@ -8126,7 +8126,7 @@ class AIAgent:
                     import os
                     pid = os.getpid()
                     with open(f"/tmp/honcho_fire_alarm_{pid}.txt", "a") as f:
-                        f.write(f"[{datetime.now().isoformat()}] handle_tool_call PID={pid} tool={tool_name!r} args={args!r} kwargs={kwargs!r}\n")
+                        f.write(f"[{datetime.now().isoformat()}] handle_tool_call PID={pid} tool={function_name!r} args={function_args!r}\n")
                     function_result = self._memory_manager.handle_tool_call(function_name, function_args)
                     _mem_result = function_result
                 except Exception as tool_error:
