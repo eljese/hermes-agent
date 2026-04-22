@@ -839,7 +839,10 @@ class HonchoSessionManager:
         print(f"[HONCHO_DEBUG] _fetch_peer_card peer_id={peer_id!r} target={target!r} peer.id={getattr(peer,'id',None)!r}", file=sys.stderr)
         getter = getattr(peer, "get_card", None)
         if callable(getter):
-            raw = getter(target=target) if target is not None else getter()
+            # For self-card reads (target == peer_id), use peer_id as target to get the card.
+            # Calling get_card() with no args returns None for self-cards.
+            effective_target = target if target is not None else peer_id
+            raw = getter(target=effective_target)
             print(f"[HONCHO_DEBUG] _fetch_peer_card raw={raw!r}", file=sys.stderr)
             return self._normalize_card(raw)
 
