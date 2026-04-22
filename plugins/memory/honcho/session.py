@@ -277,8 +277,8 @@ class HonchoSessionManager:
             logger.debug("Local session cache hit: %s", key)
             return self._cache[key]
 
-        # Gateway sessions should use the runtime user identity when available.
-        if self._runtime_user_peer_name:
+        # Gateway sessions should prefer peerName from config over runtime user identity.
+        if self._runtime_user_peer_name and not (self._config and self._config.peer_name):
             user_peer_id = self._sanitize_id(self._runtime_user_peer_name)
         elif self._config and self._config.peer_name:
             user_peer_id = self._sanitize_id(self._config.peer_name)
@@ -835,13 +835,19 @@ class HonchoSessionManager:
         has a populated card.
         """
         peer = self._get_or_create_peer(peer_id)
+        import sys
+        print(f"[HONCHO_DEBUG] _fetch_peer_card peer_id={peer_id!r} target={target!r} peer.id={getattr(peer,'id',None)!r}", file=sys.stderr)
         getter = getattr(peer, "get_card", None)
         if callable(getter):
-            return self._normalize_card(getter(target=target) if target is not None else getter())
+            raw = getter(target=target) if target is not None else getter()
+            print(f"[HONCHO_DEBUG] _fetch_peer_card raw={raw!r}", file=sys.stderr)
+            return self._normalize_card(raw)
 
         legacy_getter = getattr(peer, "card", None)
         if callable(legacy_getter):
-            return self._normalize_card(legacy_getter(target=target) if target is not None else legacy_getter())
+            raw = legacy_getter(target=target) if target is not None else legacy_getter()
+            print(f"[HONCHO_DEBUG] _fetch_peer_card legacy raw={raw!r}", file=sys.stderr)
+            return self._normalize_card(raw)
 
         return []
 
@@ -965,6 +971,10 @@ class HonchoSessionManager:
     ) -> tuple[str, str | None]:
         """Resolve observer and target peer IDs for context/search/profile queries."""
         target_peer_id = self._resolve_peer_id(session, peer)
+
+        # Self-card reads: user reading their own card goes directly (no AI observer)
+        if target_peer_id == session.user_peer_id:
+            return session.user_peer_id, session.user_peer_id
 
         if target_peer_id == session.assistant_peer_id:
             return session.assistant_peer_id, session.assistant_peer_id
